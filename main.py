@@ -63,26 +63,23 @@ class SIGN(object):
     def __red(self):
         """
         红土地动态发布/点赞/评论
+        逻辑更改: 为什么不自己发, 自己赞, 自己评, 自己删呢?
         :return:
         """
-        url = "https://manage.71dj.com/saas/mgt/api/content/moments/list?isPublish=1&pageSize=2&page=1" # 获取别人发布的编号
         self.__session.headers = {"Content-Type": "application/json;charset=utf-8", "Authorization": "bearer " + self.__access_token}
-        self.__result = self.__session.get(url).json()['result']['records']
-        for id in self.__result:
+        for item in range(2):
+            url = "https://manage.71dj.com/saas/mgt/api/content/moments/new"  # 发布动态
+            payload = {"content": "已学习", "showType": 0, "pubType": 1, "picKey": ""}
+            self.__result = self.__session.post(url, data=json.dumps(payload)).json()['result']
+
             url = "https://manage.71dj.com/saas/mgt/api/common/operation/new" # 点赞
-            self.__session.headers = {"Content-Type": "application/json;charset=UTF-8", "Authorization": "bearer " + self.__access_token}
-            payload = {"userId":self.__userId,"unitId":"","type":"10150014","businessId":id['id']}
+            payload = {"userId":self.__userId,"unitId":"","type":"10150014","businessId":self.__result}
             self.__session.post(url, data=json.dumps(payload))
-            url = f"https://manage.71dj.com/saas/mgt/api/common/operation/delete/user/{self.__userId}?type=10150014&businessId={id['id']}&userId={self.__userId}" # 取消点赞
-            self.__session.post(url)
+
             url = "https://manage.71dj.com/saas/mgt/api/common/comment/new" # 评论
-            payload = {"body": "已学习", "businessType": "10150033", "unitId": self.__unitId, "userId": self.__userId, "businessId": id['id'], "commentImages": []}
-            self.__result = self.__session.post(url, data=json.dumps(payload)).json()['result']
-            url = "https://manage.71dj.com/saas/mgt/api/common/comment/delete/" + self.__result # 删除评论
-            self.__session.post(url)
-            url = "https://manage.71dj.com/saas/mgt/api/content/moments/new" # 发布动态
-            payload = {"content":"已学习","showType":0,"pubType":1,"picKey":""}
-            self.__result = self.__session.post(url, data=json.dumps(payload)).json()['result']
+            payload = {"body": "已学习", "businessType": "10150033", "unitId": self.__unitId, "userId": self.__userId, "businessId": self.__result, "commentImages": []}
+            self.__session.post(url, data=json.dumps(payload))
+
             url = "https://manage.71dj.com/saas/mgt/api/content/moments/remove/" + self.__result # 删除动态
             self.__result = self.__session.post(url).json()['msg']
 
